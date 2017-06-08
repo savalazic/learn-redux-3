@@ -170,3 +170,95 @@ function mapStateToProps(state) {
 
 export default connect(mapStateToProps, { fetchPosts })(PostsIndex)
 ```
+
+### React router navigation
+
+`index.js`
+
+```
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { createStore, applyMiddleware } from 'redux';
+import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import promise from 'redux-promise'
+
+import reducers from './reducers';
+
+import PostsIndex from './components/posts_index'
+import PostsNew from './components/posts_new'
+
+const createStoreWithMiddleware = applyMiddleware(promise)(createStore);
+
+ReactDOM.render(
+  <Provider store={createStoreWithMiddleware(reducers)}>
+    <BrowserRouter>
+      <div>
+        <Switch>
+          <Route path='/posts/new' component={PostsNew} />
+          <Route path='/' component={PostsIndex} />
+        </Switch>
+      </div>
+    </BrowserRouter>
+  </Provider>
+  , document.querySelector('.container'));
+
+
+// Switch takes collection of different routes
+// most specific route at the top
+```
+
+
+`components/posts_index.js`
+
+```
+import _ from 'lodash'
+import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import { Link } from 'react-router-dom'
+import { fetchPosts } from '../actions'
+
+class PostsIndex extends Component {
+
+  componentDidMount() {
+    // perfect place to fetch data
+    this.props.fetchPosts()
+  }
+
+  renderPosts() {
+    // lodash function that returns array (from object)
+    return _.map(this.props.posts, post => {
+      return (
+        <li className='list-group-item' key={post.id}>
+          {post.title}
+        </li>
+      )
+    })
+  }
+
+  render() {
+    console.log(this.props.posts)
+    return (
+      <div>
+        <div className='text-xs-right'>
+          <Link className='btn btn-primary' to='/posts/new'>
+            Add a Post
+          </Link>
+        </div>
+        <h3>Posts</h3>
+        <ul className='list-group'>
+          {this.renderPosts()}
+        </ul>
+      </div>
+    )
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    posts: state.posts
+  }
+}
+
+export default connect(mapStateToProps, { fetchPosts })(PostsIndex)
+```

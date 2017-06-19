@@ -263,7 +263,7 @@ function mapStateToProps(state) {
 export default connect(mapStateToProps, { fetchPosts })(PostsIndex)
 ```
 
-### Installing React-Redux
+### Installing Redux-Form
 <a href="http://redux-form.com/6.7.0/docs/GettingStarted.md/">Follow official guide</a>
 
 <img src="http://i.imgur.com/C1XsuKr.png" />
@@ -359,3 +359,36 @@ export default reduxForm({
 pristine: user not select input yet
 touched: user has selected input and focused out
 invalid: when error occured
+
+
+# Submitting data to API
+
+## Create Post Action Creator
+
+`actions/index.js`
+
+```
+export function createPost(values) {
+  const request = axios.post(`${ROOT_URL}/posts${API_KEY}`, values)
+
+  return {
+    type: CREATE_POST,
+    payload: request
+  }
+}
+```
+
+`components/posts_new.js`
+
+```
+onSubmit(values) {
+  this.props.createPost(values)
+}
+
+export default reduxForm({
+  validate: validate,
+  form: 'PostNewForm' // a unique name for this form
+})(
+  connect(null, { createPost })(PostsNew)
+)
+```

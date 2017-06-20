@@ -8,9 +8,7 @@ import { createPost } from '../actions'
 class PostsNew extends Component {
 
   renderField(field) {
-
     const { meta } = field
-
     const className = `form-group ${meta.touched && meta.error ? 'has-danger' : ''}` 
 
     return (
@@ -30,11 +28,12 @@ class PostsNew extends Component {
 
   onSubmit(values) {
     console.log(values)
-    this.props.createPost(values)
+    this.props.createPost(values, () => {
+      this.props.history.push('/')
+    })
   }
 
   render() {
-
     const { handleSubmit } = this.props // reduxForm thing..
 
     return (

@@ -392,3 +392,178 @@ export default reduxForm({
   connect(null, { createPost })(PostsNew)
 )
 ```
+
+### Navigate to index page when post is added
+
+`actions/index.js`
+
+```
+export function createPost(values, callback) {
+  const request = axios.post(`${ROOT_URL}/posts${API_KEY}`, values)
+    .then(() => callback())
+
+  return {
+    type: CREATE_POST,
+    payload: request
+  }
+}
+```
+
+`components/posts_new.js`
+
+```
+ onSubmit(values) {
+    console.log(values)
+    this.props.createPost(values, () => {
+      this.props.history.push('/')
+    })
+  }
+```
+
+### Implementing Post Show Component
+
+`index.js`
+
+```
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { Provider } from 'react-redux'
+import { createStore, applyMiddleware } from 'redux'
+import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import promise from 'redux-promise'
+
+import reducers from './reducers';
+
+import PostsIndex from './components/posts_index'
+import PostsNew from './components/posts_new'
+import PostsShow from './components/posts_show'
+
+const createStoreWithMiddleware = applyMiddleware(promise)(createStore);
+
+ReactDOM.render(
+  <Provider store={createStoreWithMiddleware(reducers)}>
+    <BrowserRouter>
+      <div>
+        <Switch>
+          <Route path='/posts/new' component={PostsNew} />
+          <Route path='/posts/:id' component={PostsShow} />
+          <Route path='/' component={PostsIndex} />
+        </Switch>
+      </div>
+    </BrowserRouter>
+  </Provider>
+  , document.querySelector('.container'));
+
+// Switch takes collection of different routes
+// most specific route at the top
+```
+
+## /posts/:id to fetch data only for that post
+
+`actions/index.js`
+
+```
+import axios from 'axios'
+
+export const FETCH_POSTS = 'FETCH_POSTS'
+export const CREATE_POST = 'CREATE_POST'
+export const FETCH_POST = 'FETCH_POST'
+
+const ROOT_URL = 'http://reduxblog.herokuapp.com/api'
+const API_KEY = '?key=SAVA1234'
+
+export function fetchPosts() {
+  const request = axios.get(`${ROOT_URL}/posts${API_KEY}`)
+
+  return {
+    type: FETCH_POSTS,
+    payload: request
+  }
+}
+
+export function createPost(values, callback) {
+  const request = axios.post(`${ROOT_URL}/posts${API_KEY}`, values)
+    .then(() => callback())
+
+  return {
+    type: CREATE_POST,
+    payload: request
+  }
+}
+
+export function fetchPost(id) {
+  const request = axios.get(`${ROOT_URL}/posts/${id}${API_KEY}`)
+
+  return {
+    type: FETCH_POST,
+    payload: request
+  }
+}
+```
+
+`reducers/reducer_posts.js`
+
+```
+import { FETCH_POSTS, FETCH_POST } from '../actions'
+import _ from 'lodash'
+
+export default function(state = {}, action) {
+  switch(action.type) {
+    case FETCH_POSTS:
+      return _.mapKeys(action.payload.data, 'id')
+    case FETCH_POST:
+      // ES5
+      // const post = action.payload.data
+      // const newState =  { ...state }
+      // newState[post.id] = post
+      // return newState
+
+      // ES6
+      return { ...state, [action.payload.data.id]: action.payload.data }
+    default:
+      return state
+  }
+}
+```
+
+`components/posts_show.js`
+
+```
+import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import { fetchPost } from '../actions'
+
+class PostsShow extends Component {
+
+  componentDidMount() {
+    const { id } = this.props.match.params
+    this.props.fetchPost(id)
+  }
+
+  render() {
+    const { post } = this.props
+
+    if (!post) {
+      return <div>Loading...</div>
+    }
+
+    return (
+      <div>
+        <h3>{post.title}</h3>
+        <h6>Categories: {post.categories}</h6>
+        <p>{post.content}</p>
+      </div>
+    )
+  }
+
+}
+
+function mapStateToProps({ posts }, ownProps) {
+  // this.props === ownProps
+  return {
+    post: posts[ownProps.match.params.id]
+  }
+}
+
+export default connect(mapStateToProps, { fetchPost })(PostsShow)
+```
